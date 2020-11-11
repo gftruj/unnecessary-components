@@ -1,0 +1,18 @@
+{
+  "name": "unnecessary-components",
+  "version": "0.0.1",
+  "description": "Stuff i use. Then forget. Then create from scratch.",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify index.js -o dist/unnecesarry-components.js",
+    "build-min": "browserify index.js | uglifyjs > dist/unnecesarry-components.min.js"
+  },
+  "devDependencies": {
+    "aframe": "^1.0.4",
+    "browserify": "^13.0.0",
+    "uglify-es": "^3.1.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

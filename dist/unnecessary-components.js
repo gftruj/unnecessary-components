@@ -4,7 +4,7 @@ require('./src/mesh');
 },{"./src/mesh":4}],2:[function(require,module,exports){
 
 
-module.exports = THREE.SkinnedMeshUtils = (function() {
+module.exports = THREE.Box3Utils = (function() {
     /*
      * POLYFILL
      */
@@ -108,16 +108,16 @@ module.exports = THREE.SkinnedMeshUtils = (function() {
         box.union(aabb);
     }
     return {
-      expandAABBFromSkinnedMesh: function(skinnedMesh, aabb) {
+      expandFromSkinnedMesh: function(skinnedMesh, aabb) {
         updateAABB(skinnedMesh, aabb, true);
       },
-      AABBFromSkinnedMesh: function(skinnedMesh, aabb) {
+      fromSkinnedMesh: function(skinnedMesh, aabb) {
         updateAABB(skinnedMesh, aabb, false);
       }
     };
   })();
 },{}],3:[function(require,module,exports){
-require("./SkinnedMeshUtils")
+require("./Box3Utils")
 
 module.exports.Component = AFRAME.registerComponent("bbox-helper", {
     schema: {
@@ -199,9 +199,9 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
         }
         // skinned model. Either separate boxes, or combined
         if (common_box_uuid && combine) {
-          THREE.SkinnedMeshUtils.expandAABBFromSkinnedMEsh(this.nodeMap[uuid].mesh, this.nodeMap[common_box_uuid].box);
+          THREE.Box3Utils.expandFromSkinnedMEsh(this.nodeMap[uuid].mesh, this.nodeMap[common_box_uuid].box);
         } else {
-          THREE.SkinnedMeshUtils.AABBFromSkinnedMesh(this.nodeMap[uuid].mesh, this.nodeMap[uuid].box);
+          THREE.Box3Utils.fromSkinnedMesh(this.nodeMap[uuid].mesh, this.nodeMap[uuid].box);
           common_box_uuid = uuid
         }
       }
@@ -210,7 +210,7 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
       this.removeBoxes()
     }
   });
-},{"./SkinnedMeshUtils":2}],4:[function(require,module,exports){
+},{"./Box3Utils":2}],4:[function(require,module,exports){
 require('./bbox-helper');
 require('./prevent-culling');
 require('./redbox-from-object3d');

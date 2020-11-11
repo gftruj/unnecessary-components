@@ -80,7 +80,7 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
         }
         // skinned model. Either separate boxes, or combined
         if (common_box_uuid && combine) {
-          THREE.Box3Utils.expandFromSkinnedMEsh(this.nodeMap[uuid].mesh, this.nodeMap[common_box_uuid].box);
+          THREE.Box3Utils.expandFromSkinnedMesh(this.nodeMap[uuid].mesh, this.nodeMap[common_box_uuid].box);
         } else {
           THREE.Box3Utils.fromSkinnedMesh(this.nodeMap[uuid].mesh, this.nodeMap[uuid].box);
           common_box_uuid = uuid

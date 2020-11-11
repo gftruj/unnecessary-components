@@ -1,4 +1,4 @@
-require("./SkinnedMeshUtils")
+require("./Box3Utils")
 
 module.exports.Component = AFRAME.registerComponent("bbox-helper", {
     schema: {

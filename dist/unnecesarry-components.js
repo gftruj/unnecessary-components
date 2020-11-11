@@ -214,7 +214,53 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
 require('./bbox-helper');
 require('./prevent-culling');
 require('./redbox-from-object3d');
-},{"./bbox-helper":3,"./prevent-culling":5,"./redbox-from-object3d":6}],5:[function(require,module,exports){
+require('./model-relative-opacity');
+},{"./bbox-helper":3,"./model-relative-opacity":5,"./prevent-culling":6,"./redbox-from-object3d":7}],5:[function(require,module,exports){
+module.exports.Component = AFRAME.registerComponent('model-relative-opacity', {
+    schema: {opacityFactor: {default: 0.5}},
+    init: function () {
+      this.nodeMap = {}
+      this.prepareMap.bind(this)
+      this.traverseMesh.bind(this)
+
+      this.el.addEventListener('model-loaded', e=> {
+        this.prepareMap()
+        this.update()
+      });
+    },
+    prepareMap: function() {
+      this.traverseMesh(node => {
+          this.nodeMap[node.uuid] = node.material.opacity
+      })
+    },
+    update: function () {
+      this.traverseMesh(node => {
+          node.material.opacity = this.nodeMap[node.uuid] * this.data.opacityFactor
+          node.material.transparent = node.material.opacity < 1.0;
+          node.material.needsUpdate = true;
+      })
+    },
+    play: function() {},
+    pause: function(){},
+    remove: function() {
+        this.traverseMesh(node => {
+            node.material.opacity = this.nodeMap[node.uuid]
+            node.material.transparent = node.material.opacity < 1.0;
+            node.material.needsUpdate = true;
+        })
+    },
+    traverseMesh: function(func) {
+      var mesh = this.el.getObject3D('mesh');
+      var data = this.data;
+      if (!mesh) { return; }
+       mesh.traverse(node => {
+        if (node.isMesh) {
+          func(node)
+        }
+      }); 
+    }
+  });
+},{}],6:[function(require,module,exports){
 module.exports.Component = AFRAME.registerComponent("prevent-culling", {
     init: function () {
       this.cache = {};
@@ -241,7 +287,7 @@ module.exports.Component = AFRAME.registerComponent("prevent-culling", {
       });
     }
   });
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 
 module.exports.Component = AFRAME.registerComponent("redbox-from-object3d", {
     init: function () {

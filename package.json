@@ -4,8 +4,8 @@
   "description": "Stuff i use. Then forget. Then create from scratch.",
   "main": "index.js",
   "scripts": {
-    "build": "browserify index.js -o dist/unnecesarry-components.js",
-    "build-min": "browserify index.js | uglifyjs > dist/unnecesarry-components.min.js"
+    "build": "browserify index.js -o dist/unnecessary-components.js",
+    "build-min": "browserify index.js | uglifyjs > dist/unnecessary-components.min.js"
   },
   "devDependencies": {
     "aframe": "^1.0.4",

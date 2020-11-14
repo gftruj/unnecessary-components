@@ -1,4 +1,4 @@
-module.exports = function isPointInPolygon(point, vs) {
+function isPointInPolygon(point, vs) {
   // ray-casting algorithm based on
   // https://github.com/substack/point-in-polygon
   // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
@@ -18,4 +18,8 @@ module.exports = function isPointInPolygon(point, vs) {
     if (intersect) inside = !inside;
   }
   return inside;
+}
+
+module.exports =  {
+  isPointInPolygon
 }

@@ -3,7 +3,7 @@ require('./src/mesh');
 require('./src/asourcemap/asourcemap');
 
 },{"./src/asourcemap/asourcemap":3,"./src/mesh":6}],2:[function(require,module,exports){
-module.exports = function isPointInPolygon(point, vs) {
+function isPointInPolygon(point, vs) {
   // ray-casting algorithm based on
   // https://github.com/substack/point-in-polygon
   // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
@@ -23,6 +23,10 @@ module.exports = function isPointInPolygon(point, vs) {
     if (intersect) inside = !inside;
   }
   return inside;
+}
+
+module.exports =  {
+  isPointInPolygon
 }
 },{}],3:[function(require,module,exports){
 require("./PolygonUtils")

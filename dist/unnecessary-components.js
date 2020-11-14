@@ -29,7 +29,10 @@ module.exports =  {
   isPointInPolygon
 }
 },{}],3:[function(require,module,exports){
+const PolygonUtils = require("./PolygonUtils");
+
 require("./PolygonUtils")
+var isPointInPolygon = PolygonUtils.isPointInPolygon
 
 AFRAME.registerComponent("asourcemap", {
   schema: {
@@ -108,7 +111,7 @@ AFRAME.registerComponent("asourcemap", {
     var y = this.imageData.imageHeight - uvPoint.y * this.imageData.imageHeight
 
     for (var i = 0; i < this.polygons.length; i++) {
-      if (isPointInPolygon([x, y], this.polygons[i].area)) {
+      if (PolygonUtils.isPointInPolygon([x, y], this.polygons[i].area)) {
         this.el.emit("area-clicked", {area: this.polygons[i].name})
         window.location = this.polygons[i].action
       }

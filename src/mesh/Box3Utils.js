@@ -6,7 +6,6 @@ module.exports = THREE.Box3Utils = (function() {
      */
     var boneTransformPolyfill = null;
     if (typeof THREE.SkinnedMesh.prototype.boneTransform !== "function") {
-      console.log("using boneTransformPolyfill");
       boneTransformPolyfill = (function(mesh, target, index) {
         var vertex = new THREE.Vector3();
         var temp = new THREE.Vector3();

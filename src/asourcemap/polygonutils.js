@@ -1,4 +1,4 @@
-module.exports = PolygonUtils = function isPointInPolygon(point, vs) {
+module.exports = function isPointInPolygon(point, vs) {
   // ray-casting algorithm based on
   // https://github.com/substack/point-in-polygon
   // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html

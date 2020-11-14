@@ -76,9 +76,8 @@ AFRAME.registerComponent("asourcemap", {
   },
   checkForAreas: function (evt) {
     var uvPoint = evt.detail.intersection.uv;
-    var x = uvPoint.x * this.imageData.imageWidth
-    var y = this.imageData.imageHeight - uvPoint.y * this.imageData.imageHeight
-
+    var x = uvPoint.x * this.imageData.width
+    var y = this.imageData.height - uvPoint.y * this.imageData.height
     for (var i = 0; i < this.polygons.length; i++) {
       if (PolygonUtils.isPointInPolygon([x, y], this.polygons[i].area)) {
         this.el.emit("area-clicked", {area: this.polygons[i].name})

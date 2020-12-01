@@ -1,8 +1,8 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 require('./src/mesh');
 require('./src/asourcemap/asourcemap');
-
-},{"./src/asourcemap/asourcemap":3,"./src/mesh":6}],2:[function(require,module,exports){
+require('./src/physics');
+},{"./src/asourcemap/asourcemap":3,"./src/mesh":6,"./src/physics":12}],2:[function(require,module,exports){
 function isPointInPolygon(point, vs) {
   // ray-casting algorithm based on
   // https://github.com/substack/point-in-polygon
@@ -241,6 +241,7 @@ module.exports = THREE.Box3Utils = (function() {
         else 
           skinnedMesh.boneTransform(index, skinnedVertex);
   
+          //skinnedVertex.applyQuaternion(skinnedMesh.parent.parent.quaternion)
         // expand aabb
         aabb.expandByPoint(skinnedVertex);
       }
@@ -259,7 +260,7 @@ module.exports = THREE.Box3Utils = (function() {
     };
   })();
 },{}],5:[function(require,module,exports){
-require("./Box3Utils")
+require("./../lib/Box3Utils")
 
 module.exports.Component = AFRAME.registerComponent("bbox-helper", {
     schema: {
@@ -273,6 +274,7 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
 
       this.el.addEventListener("model-loaded", e => {
         let mesh = this.el.getObject3D("mesh");
+        if (!mesh) mesh = this.el.object3D;
         mesh.traverse(node => {
           if (node.isSkinnedMesh) {
             this.skinnedMesh = node;
@@ -352,7 +354,7 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
       this.removeBoxes()
     }
   });
-},{"./Box3Utils":4}],6:[function(require,module,exports){
+},{"./../lib/Box3Utils":4}],6:[function(require,module,exports){
 require('./bbox-helper');
 require('./prevent-culling');
 require('./redbox-from-object3d');
@@ -456,4 +458,176 @@ module.exports.Component = AFRAME.registerComponent("redbox-from-object3d", {
       this.helper = null
     }
   })
-},{}]},{},[1]);
+},{}],10:[function(require,module,exports){
+module.exports.Component = AFRAME.registerComponent("bone-collider", {
+    multiple: true,
+    schema: {
+        bone: {
+            type: "string", default: ""
+        },
+        shape: {
+            default: "box", oneOf: ['box', 'sphere']
+        },
+        halfExtents: {
+            default: "0.1 0.1 0.1", if: { shape: ['box'] }
+        },
+        radius: {
+            default: "0.1", if: { shape: ['sphere'] }
+        }
+    },
+    init: function () {
+        let data = this.data
+        let self = this;
+        this.el.addEventListener("model-loaded", function modelReady() {
+            // one model is enough for now
+            self.el.removeEventListener("model-loaded", modelReady)
+
+            let boneDummy = document.createElement("a-entity")
+            boneDummy.setAttribute("static-body", "shape", "none")
+            self.setDummyShape(boneDummy, data);
+            self.bone = self.getBone(self.el.object3D, data.bone);
+            self.el.appendChild(boneDummy)
+            self.boneDummy = boneDummy
+        })
+    },
+    update: function (olddata) {
+        // if the bone / dummy are ready
+        if (!(this.bone && this.boneDummy)) return;
+
+        // if this is set, then the model should be ready
+        if (this.data.boneName !== olddata.boneName) {
+            this.bone = this.getBone(this.el.object3D, this.data.boneName);
+        }
+
+        // check if the shape needs updating
+        for (let key of Object.keys(this.data)) {
+            if (key === "bone") continue;
+            if (this.data[key] !== olddata[key]) {
+                this.setDummyShape(this.boneDummy, this.data);
+                break;
+            }
+        }
+    },
+    setDummyShape(dummy, data) {
+        let shapeName = "shape__bone";
+        var config = null;
+        if (data.shape === "sphere") {
+            config = {
+                "shape": data.shape,
+                "radius": data.radius
+            }
+        } else {
+            config = {
+                "shape": data.shape,
+                "halfExtents": data.halfExtents
+            }
+        }
+        dummy.setAttribute(shapeName, config)
+    },
+    getBone: function (root, boneName) {
+        // get exact bone
+        bone = root.getObjectByName(boneName);
+        // or look for bones containing the name
+        if (!bone) {
+            root.traverse(node => {
+                if (node.name.includes(boneName) && node.isBone) {
+                    if (bone) {
+                        console.log("Multiple bones contain", boneName, "in their name.")
+                    }
+                    bone = node
+                }
+            })
+        }
+        if (!bone) {
+            console.log(boneName, "was not found in the model")
+        }
+        return bone;
+    },
+    play: function () {
+        this.paused = false;
+    },
+    pause: function () {
+        this.paused = true;
+    },
+    remove: function () {
+        this.bone = null
+        // remove the dummy element
+        this.boneDummy.removeAttribute("static-body")
+        this.el.removeChild(this.boneDummy)
+        this.boneDummy = null;
+    },
+    tick: (function () {
+        let inverseWorldMatrix = new THREE.Matrix4();
+        let boneMatrix = new THREE.Matrix4();
+
+        return function () {
+            if (!this.bone) return;
+
+             // onTick in case object is moving
+            if (inverseWorldMatrix.invert) {
+                inverseWorldMatrix.copy(this.el.object3D.matrix).invert();
+            } else {
+                inverseWorldMatrix.getInverse((this.el.object3D.matrix)) 
+            }
+            boneMatrix.multiplyMatrices(inverseWorldMatrix, this.bone.matrixWorld);
+            this.boneDummy.object3D.position.setFromMatrixPosition(boneMatrix)
+        }
+    })()
+})
+},{}],11:[function(require,module,exports){
+module.exports.Component = AFRAME.registerComponent("cannon-material", {
+    schema: {
+        friction: { default: -1 },
+        restitution: { default: -1 }
+    },
+    init: function () {
+        this.system = this.el.sceneEl.systems.physics;
+        this.defaultMaterial = this.system.driver.getMaterial("defaultMaterial")
+        this.applyMaterial = this.applyMaterial.bind(this, this.data.friction, this.data.restitution)
+    },
+    update: function () {
+        // apply the material
+        if (this.el.body) {
+            this.applyMaterial()
+        } else {
+            this.el.addEventListener('body-loaded', this.applyMaterial)
+        }
+    },
+    applyMaterial: function (friction, restitution) {
+        let mat = this.checkIfMaterialExists(this.system.driver.materials, friction, restitution)
+        // the material may already exist
+        if (mat) {
+            this.el.body.material = mat;
+            return;
+        }
+
+        // create a new material, and contactmaterial
+        let name = "f" + friction + "r" + restitution
+        this.system.driver.addMaterial({
+            name: name
+        })
+        this.el.body.material = this.system.driver.getMaterial(name);
+
+        var contactmaterial = new CANNON.ContactMaterial(this.defaultMaterial, this.el.body.material, {
+            restitution: restitution
+        })
+        this.system.driver.world.addContactMaterial(contactmaterial);
+    },
+    checkIfMaterialExists(materials, friction, restitution) {
+        for (let name in materials) {
+            if (materials[name].friction === friction && materials[name].restitution === restitution)
+                return materials[name];
+        }
+        return null;
+    },
+    pause: function () { },
+    play: function () { },
+    remove: function () {
+        this.el.removeEventListener("body-loaded", this.applyMaterial)
+    }
+})
+},{}],12:[function(require,module,exports){
+require('./bone-collider');
+require('./cannon-material');
+
+},{"./bone-collider":10,"./cannon-material":11}]},{},[1]);

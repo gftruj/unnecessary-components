@@ -1,4 +1,4 @@
-require("./Box3Utils")
+require("./../lib/Box3Utils")
 
 module.exports.Component = AFRAME.registerComponent("bbox-helper", {
     schema: {
@@ -12,6 +12,7 @@ module.exports.Component = AFRAME.registerComponent("bbox-helper", {
 
       this.el.addEventListener("model-loaded", e => {
         let mesh = this.el.getObject3D("mesh");
+        if (!mesh) mesh = this.el.object3D;
         mesh.traverse(node => {
           if (node.isSkinnedMesh) {
             this.skinnedMesh = node;

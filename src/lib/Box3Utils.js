@@ -94,6 +94,7 @@ module.exports = THREE.Box3Utils = (function() {
         else 
           skinnedMesh.boneTransform(index, skinnedVertex);
   
+          //skinnedVertex.applyQuaternion(skinnedMesh.parent.parent.quaternion)
         // expand aabb
         aabb.expandByPoint(skinnedVertex);
       }

@@ -473,11 +473,31 @@ module.exports.Component = AFRAME.registerComponent("bone-collider", {
         },
         radius: {
             default: "0.1", if: { shape: ['sphere'] }
+        },
+        offset: {
+            default: "0 0 0"
+        },
+        orientation: {
+            default: "0 0 0"
+        },
+        debug: {
+            default: false
         }
     },
     init: function () {
         let data = this.data
         let self = this;
+
+        // setup orientation, and offset
+        this.orientation = new THREE.Quaternion();
+        this.offset = new THREE.Vector3();
+
+        // setup axesHelper
+        let axesContainer = new THREE.Object3D();
+        axesContainer.add(new THREE.AxesHelper(1));
+        this.el.sceneEl.object3D.add(axesContainer)
+        this.axesContainer = axesContainer;
+
         this.el.addEventListener("model-loaded", function modelReady() {
             // one model is enough for now
             self.el.removeEventListener("model-loaded", modelReady)
@@ -491,6 +511,17 @@ module.exports.Component = AFRAME.registerComponent("bone-collider", {
         })
     },
     update: function (olddata) {
+        // check debug mode
+        this.axesContainer.visible = this.data.debug;
+
+        // apply offset and orientation;
+        this.offset.copy(AFRAME.utils.coordinates.parse(this.data.offset));
+        var orientation = AFRAME.utils.coordinates.parse(this.data.orientation);
+        for (let angle in orientation) {
+            orientation[angle] *= Math.PI / 180;
+        }
+        this.orientation.setFromEuler(new THREE.Euler(orientation.x, orientation.y, orientation.z))
+
         // if the bone / dummy are ready
         if (!(this.bone && this.boneDummy)) return;
 
@@ -527,6 +558,7 @@ module.exports.Component = AFRAME.registerComponent("bone-collider", {
     getBone: function (root, boneName) {
         // get exact bone
         bone = root.getObjectByName(boneName);
+
         // or look for bones containing the name
         if (!bone) {
             root.traverse(node => {
@@ -559,18 +591,33 @@ module.exports.Component = AFRAME.registerComponent("bone-collider", {
     tick: (function () {
         let inverseWorldMatrix = new THREE.Matrix4();
         let boneMatrix = new THREE.Matrix4();
+        let offset = new THREE.Vector3(0, 0, 0);
 
         return function () {
             if (!this.bone) return;
 
-             // onTick in case object is moving
+            // get bone matrix
+            // newer versions of threejs don't like getInverse()
             if (inverseWorldMatrix.invert) {
                 inverseWorldMatrix.copy(this.el.object3D.matrix).invert();
             } else {
-                inverseWorldMatrix.getInverse((this.el.object3D.matrix)) 
+                inverseWorldMatrix.getInverse((this.el.object3D.matrix))
             }
             boneMatrix.multiplyMatrices(inverseWorldMatrix, this.bone.matrixWorld);
-            this.boneDummy.object3D.position.setFromMatrixPosition(boneMatrix)
+
+            // apply the predefined and user orientation BEFORE applying any position offsets
+            this.boneDummy.object3D.quaternion.setFromRotationMatrix(boneMatrix)
+            this.boneDummy.object3D.quaternion.multiply(this.orientation)
+
+            // apply offset
+            offset.copy(this.offset).applyQuaternion(this.boneDummy.object3D.quaternion)
+            this.boneDummy.object3D.position.setFromMatrixPosition(boneMatrix).add(offset)
+
+            // apply debug axes
+            if (this.data.debug) {
+                this.axesContainer.position.copy(this.boneDummy.object3D.getWorldPosition(this.axesContainer.position))
+                this.axesContainer.quaternion.copy(this.boneDummy.object3D.getWorldQuaternion(this.axesContainer.quaternion))
+            }
         }
     })()
 })
